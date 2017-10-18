@@ -10,6 +10,7 @@ import math
 args = sys.argv
 
 midifile = args[1]
+mode = int(args[5])
 
 #書き出し先のファイル名
 outfile = "pimidi.sh"
@@ -68,12 +69,11 @@ def main(argv):
 
 
     noteEventList.sort()
-
+    nowtimecount = 0
     print "イベントの長さ:%d" % len(noteEventList)
     print "===================================="
     last_time=-0
     active_notes={}
-    #FILE.write ("echo 1 > /dev/rtmotoren0\n")
     for note in noteEventList:
         if last_time < note[0]:
             freq_xyz=[0,0,0]
@@ -82,27 +82,37 @@ def main(argv):
                 freq_xyz[i] = pow(2.0, (nownote-69)/12.0)*440.0
                 #print "チャンネル:%d  ノート:%d  周波数:%f  %d" % (i,nownote,freq_xyz[i],note[0]-last_time)
 
+            if mode == 1:
+                ###ラズパイマウスで動かす用
+                #モータの電源ON
+                FILE.write ("echo 1 > /dev/rtmotoren0\n")
+                #演出用に距離センサを動かす
+                FILE.write ("cat < /dev/rtlightsensor0\n")
+                #モータへの指令
+                FILE.write ("echo %d %d %d > /dev/rtmotor0 && " % (freq_xyz[0]*int(args[4]),freq_xyz[1]*int(args[4]),((float(note[0] - last_time)/midi.division)*tempo*0.001)))
+                #モータの電源OFF
+                FILE.write ("echo 0 > /dev/rtmotoren0\n")
+
+                #別方式
+                #FILE.write ("echo %d > /dev/rtmotor_raw_l0 && echo %d > /dev/rtmotor_raw_r0\n" % (freq_xyz[0],freq_xyz[1]))
+                #FILE.write ("sleep %f\n" % ((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001))
+
+
+            elif mode == 2:
+                ###画面に周波数やウェイト時間を表示させる(デバッグ用)
+                nowtimecount += ((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001)
+                FILE.write ("echo -------------------------------\n")
+                FILE.write ("echo MusicTime[s]:%f\n" % nowtimecount)
+                FILE.write ("echo LeftMotor[Hz]:%d\n" % freq_xyz[0]*int(args[4]))
+                FILE.write ("echo RightMotor[Hz]:%d\n" % freq_xyz[1]*int(args[4]))
+                FILE.write ("echo DeltaTime[s]:%f\n" % ((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001))
+                #FILE.write ("echo left:%7dRight:%-5d\tTime:%0.6f\n" % (freq_xyz[0]*int(args[4]),freq_xyz[1]*int(args[4]),((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001)))
+                #ウェイト
+                FILE.write ("sleep %f\n" % ((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001))
+
             #print freq_xyz[1],freq_xyz[0]
             #print "経過時間:%d  周波数:%d  時間差：%d" % (last_time,freq_xyz[0],(note[0] - last_time))
 
-            #モータの電源ON
-            FILE.write ("echo 1 > /dev/rtmotoren0\n")
-
-            #実機用
-            #FILE.write ("echo %d > /dev/rtmotor_raw_l0 && echo %d > /dev/rtmotor_raw_r0\n" % (freq_xyz[0],freq_xyz[1]))  
-            FILE.write ("cat < /dev/rtlightsensor0\n")
-            FILE.write ("echo %d %d %d > /dev/rtmotor0 && " % (freq_xyz[0]*int(args[4]),freq_xyz[1]*int(args[4]),((float(note[0] - last_time)/midi.division)*tempo*0.001)))
-
-            #FILE.write ("echo %d > /dev/rtmotor_raw_l0 && echo %d > /dev/rtbuzzer0\n" % (freq_xyz[0],freq_xyz[1]))
-
-            #デバッグ用
-            #FILE.write ("echo Left:%d  Right:%d  Time:%f\n" % (freq_xyz[0],freq_xyz[1],((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001)))
-
-            #ウェイト処理
-            #FILE.write ("sleep %f\n" % ((float(note[0] - last_time)/midi.division)*tempo*0.001*0.001))
-
-            #モータの電源OFF
-            FILE.write ("echo 0 > /dev/rtmotoren0\n")
             last_time = note[0]
         if note[1]==1: # Note on
             if active_notes.has_key(note[2]):

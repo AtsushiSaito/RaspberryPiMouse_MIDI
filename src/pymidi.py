@@ -28,7 +28,7 @@ def main(argv):
     noteEventList=[]
 
     #MIDIファイルの情報を表示
-    print "FileName：" + argv[1]
+    print "FileName：" + args[1]
     print "トラック数：%d" % midi.num_tracks
     print "フォーマット形式：%d" % midi.format
     print "４分音符基準の分解能：%d" % midi.division

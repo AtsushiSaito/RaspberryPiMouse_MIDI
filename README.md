@@ -16,4 +16,6 @@ $ ./midi2pim.sh aaa.mid 0 1 1
 例) 2の場合　➡　オクターブが1上がる。
 例) 3の場合　➡  オクターブが2上がる。
 
+## お借りしたもの
 
+Fun with MIDI, CNC and vector maths (mid2cnc.py):(http://tim.cexx.org/?p=633)
